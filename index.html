@@ -716,14 +716,8 @@ function renderQuizQuestion() {
   document.getElementById('quiz-result').textContent = '';
   document.getElementById('quiz-next-btn').style.display = 'none';
 
-  // "Tüm Alfabe" modunda soru her zaman isim → harf
-  // "4 Şık" modunda 0=harf→isim, 1=isim→harf
-  let qtype;
-  if (quizMode === 'all') {
-    qtype = 1; // isim → harf (cevap Arapça harf olacak)
-  } else {
-    qtype = Math.floor(Math.random() * 2);
-  }
+  // Her iki modda da 0=harf→isim, 1=isim→harf
+  const qtype = Math.floor(Math.random() * 2);
 
   let questionText, correctAns, allChoices, isArabic;
   if (qtype === 0) {
@@ -758,18 +752,36 @@ function renderQuizQuestion() {
       optsEl.appendChild(btn);
     });
   } else {
-    // Tüm alfabe modu — 34 harfin tamamını göster
+    // Tüm alfabe modu
     optsEl.style.display = 'none';
     allEl.style.display  = '';
     allEl.innerHTML = '';
-    LETTERS.forEach(letter => {
-      const btn = document.createElement('button');
-      btn.className = 'quiz-all-opt';
-      btn.textContent = letter.ar;
-      btn.title = letter.name;
-      btn.onclick = () => answerQuiz(letter.ar, correctAns);
-      allEl.appendChild(btn);
-    });
+    if (qtype === 1) {
+      // isim → harf: 34 Arapça harf butonu
+      allEl.style.gridTemplateColumns = 'repeat(6, 1fr)';
+      LETTERS.forEach(letter => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-all-opt';
+        btn.textContent = letter.ar;
+        btn.title = letter.name;
+        btn.onclick = () => answerQuiz(letter.ar, correctAns);
+        allEl.appendChild(btn);
+      });
+    } else {
+      // harf → isim: 34 isim butonu
+      allEl.style.gridTemplateColumns = 'repeat(3, 1fr)';
+      LETTERS.forEach(letter => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-all-opt';
+        btn.style.fontFamily = 'inherit';
+        btn.style.fontSize = '0.9rem';
+        btn.style.direction = 'ltr';
+        btn.style.padding = '10px 6px';
+        btn.textContent = letter.name;
+        btn.onclick = () => answerQuiz(letter.name, correctAns);
+        allEl.appendChild(btn);
+      });
+    }
   }
 }
 
