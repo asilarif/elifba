@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Osmanlıca Elifba Öğrenimi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Elifba">
+<link rel="apple-touch-icon" href="icon2.png">
+<meta name="theme-color" content="#1a1a2e">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    padding: 20px 30px;
+    text-align: center;
+    border-bottom: 2px solid #e94560;
+  }
+  header h1 { font-size: 2rem; color: #f5c518; letter-spacing: 2px; }
+  header p { color: #aaa; margin-top: 4px; font-size: 0.9rem; }
+  header .credit { color: #3a4a6a; font-size: 0.72rem; margin-top: 10px; letter-spacing: 1.5px; }
+
+  nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    background: #16213e;
+    flex-wrap: wrap;
+  }
+  nav button {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    background: #0f3460;
+    color: #ccc;
+  }
+  nav button.active, nav button:hover {
+    background: #e94560;
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  .screen { display: none; padding: 30px 20px; max-width: 960px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  /* ── ALFABE TABLOSU ── */
+  .alphabet-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 900px) { .alphabet-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) { .alphabet-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 430px) { .alphabet-grid { grid-template-columns: 1fr !important; } }
+  .letter-card {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 12px;
+    padding: 14px 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .letter-card:hover { border-color: #e94560; transform: translateY(-3px); box-shadow: 0 6px 20px rgba(233,69,96,0.3); }
+  .letter-card .arabic { font-size: 2.6rem; color: #f5c518; line-height: 1.2; direction: rtl; font-family: 'Amiri', serif; }
+  .letter-card .name   { font-size: 1rem; font-weight: 700; color: #e94560; margin-top: 5px; }
+  .letter-card .latin  { font-size: 0.82rem; color: #aaa; margin-top: 2px; }
+  .letter-card .learned-badge {
+    position: absolute; top: 8px; right: 8px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #27ae60; font-size: 10px; display: flex;
+    align-items: center; justify-content: center; opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .letter-card.learned .learned-badge { opacity: 1; }
+  .letter-card.learned { border-color: #27ae60; }
+
+  /* örnek kelimeler satırı */
+  .examples-row {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+    gap: 4px;
+  }
+  .ex-cell {
+    flex: 1;
+    background: #0d1a30;
+    border-radius: 7px;
+    padding: 5px 3px;
+  }
+  .ex-label {
+    font-size: 0.6rem;
+    color: #557;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .ex-word {
+    font-size: 1rem;
+    color: #b8cfff;
+    direction: rtl;
+    display: block;
+    line-height: 1.3;
+    font-family: 'Amiri', serif;
+  }
+  .ex-meaning {
+    font-size: 0.62rem;
+    color: #556;
+    display: block;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── FLASH KART ── */
+  #flashcard-screen { text-align: center; }
+  .progress-bar-wrap { background: #16213e; border-radius: 10px; height: 8px; margin-bottom: 20px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, #e94560, #f5c518); transition: width 0.4s; border-radius: 10px; }
+  .progress-label { font-size: 0.85rem; color: #888; margin-bottom: 10px; }
+
+  .flashcard-container {
+    perspective: 1000px;
+    width: 340px;
+    height: 300px;
+    margin: 0 auto 30px;
+    cursor: pointer;
+  }
+  .flashcard-inner {
+    width: 100%; height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+  }
+  .flashcard-inner.flipped { transform: rotateY(180deg); }
+  .flashcard-front, .flashcard-back {
+    position: absolute; width: 100%; height: 100%;
+    backface-visibility: hidden;
+    border-radius: 16px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 18px;
+  }
+  .flashcard-front {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 2px solid #e94560;
+  }
+  .flashcard-back {
+    background: linear-gradient(135deg, #0f3460, #1a1a4e);
+    border: 2px solid #f5c518;
+    transform: rotateY(180deg);
+  }
+  .card-arabic { font-size: 5rem; color: #f5c518; direction: rtl; font-family: 'Amiri', serif; }
+  .card-hint { font-size: 0.8rem; color: #555; margin-top: 8px; }
+  .card-name  { font-size: 1.7rem; font-weight: 700; color: #f5c518; }
+  .card-latin { font-size: 1rem; color: #e94560; margin-top: 4px; }
+
+  .card-examples {
+    display: flex; gap: 8px; margin-top: 12px; width: 100%;
+  }
+  .card-ex {
+    flex: 1; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px 4px; text-align: center;
+  }
+  .card-ex-label { font-size: 0.58rem; color: #777; display: block; margin-bottom: 2px; }
+  .card-ex-word  { font-size: 1.1rem; color: #b8cfff; direction: rtl; display: block; font-family: 'Amiri', serif; }
+  .card-ex-tr    { font-size: 0.6rem; color: #556; display: block; margin-top: 1px; }
+
+  .flashcard-controls { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 12px 28px; border: none; border-radius: 25px;
+    cursor: pointer; font-size: 0.95rem; font-weight: 700;
+    transition: all 0.2s;
+  }
+  .btn-primary   { background: #e94560; color: #fff; }
+  .btn-success   { background: #27ae60; color: #fff; }
+  .btn-secondary { background: #0f3460; color: #ccc; border: 1px solid #e94560; }
+  .btn:hover { opacity: 0.85; transform: translateY(-2px); }
+
+  .mode-select {
+    display: flex; gap: 12px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .mode-btn {
+    padding: 8px 18px; border-radius: 20px; border: 1px solid #0f3460;
+    background: #16213e; color: #888; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+  }
+  .mode-btn.active { background: #0f3460; color: #f5c518; border-color: #f5c518; }
+
+  /* ── QUİZ ── */
+  #quiz-screen { text-align: center; }
+  .quiz-question { font-size: 5rem; color: #f5c518; direction: rtl; margin: 20px 0; min-height: 90px; font-family: 'Amiri', serif; }
+  .quiz-sub { font-size: 0.9rem; color: #888; margin-bottom: 20px; }
+  .quiz-options {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; max-width: 460px; margin: 0 auto 24px;
+  }
+  .quiz-opt {
+    padding: 16px; border-radius: 12px; border: 2px solid #0f3460;
+    background: #16213e; color: #eee; cursor: pointer;
+    font-size: 1.1rem; font-weight: 600; transition: all 0.2s;
+  }
+  .quiz-opt:hover:not(:disabled) { border-color: #e94560; background: #1e2a4a; }
+  .quiz-opt.correct { border-color: #27ae60; background: rgba(39,174,96,0.2); color: #27ae60; }
+  .quiz-opt.wrong   { border-color: #e94560; background: rgba(233,69,96,0.15); color: #e74c3c; }
+  .quiz-opt:disabled { cursor: default; }
+
+  .quiz-score {
+    display: inline-block; background: #16213e; border: 1px solid #0f3460;
+    border-radius: 20px; padding: 6px 20px; font-size: 0.9rem; color: #f5c518; margin-bottom: 20px;
+  }
+  .quiz-result { font-size: 1.2rem; margin: 16px 0; min-height: 28px; }
+  .quiz-result.ok   { color: #27ae60; }
+  .quiz-result.fail { color: #e94560; }
+
+  .stats-bar {
+    display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-size: 2rem; font-weight: 700; color: #f5c518; }
+  .stat-lbl { font-size: 0.75rem; color: #888; }
+
+  .section-title {
+    font-size: 1.2rem; color: #f5c518; margin-bottom: 16px;
+    border-left: 3px solid #e94560; padding-left: 12px;
+  }
+
+  .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .filter-btn {
+    padding: 6px 16px; border-radius: 16px; border: 1px solid #0f3460;
+    background: #16213e; color: #888; cursor: pointer; font-size: 0.82rem; transition: all 0.2s;
+  }
+  .filter-btn.active { background: #e94560; color: #fff; border-color: #e94560; }
+
+  /* ── POPUP ── */
+  #ex-popup {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  #ex-popup.open { display: flex; }
+  #ex-popup-inner {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 2px solid #f5c518;
+    border-radius: 20px;
+    padding: 36px 40px;
+    text-align: center;
+    max-width: 360px;
+    width: 90%;
+    position: relative;
+    animation: popIn 0.18s ease;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+  #ex-popup-label   { font-size: 0.8rem; color: #e94560; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  #ex-popup-word    { font-size: 4.5rem; color: #f5c518; direction: rtl; font-family: 'Amiri', serif; line-height: 1.2; }
+  #ex-popup-meaning { font-size: 1.1rem; color: #aaa; margin-top: 10px; }
+  #ex-popup-close {
+    position: absolute; top: 10px; right: 14px;
+    background: none; border: none; color: #555;
+    font-size: 1.4rem; cursor: pointer; line-height: 1;
+  }
+  #ex-popup-close:hover { color: #e94560; }
+
+  .ex-cell { cursor: pointer; }
+  .ex-cell:hover { background: #1a2a45; }
+
+  @media (max-width: 480px) {
+    .quiz-options { grid-template-columns: 1fr; }
+    .card-arabic  { font-size: 4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📖 Osmanlıca Elifba</h1>
+  <p>Harfleri öğren, ezberle, sına</p>
+  <p class="credit">by Asil A. A.</p>
+</header>
+
+<nav>
+  <button class="active" onclick="showScreen('alphabet')">Alfabe</button>
+  <button onclick="showScreen('flashcard')">Flash Kart</button>
+  <button onclick="showScreen('quiz')">Quiz</button>
+</nav>
+
+<!-- POPUP -->
+<div id="ex-popup" onclick="closePopup(event)">
+  <div id="ex-popup-inner">
+    <button id="ex-popup-close" onclick="closePopup()">✕</button>
+    <div id="ex-popup-label"></div>
+    <div id="ex-popup-word"></div>
+    <div id="ex-popup-meaning"></div>
+  </div>
+</div>
+
+<!-- ALFABE -->
+<div id="alphabet-screen" class="screen active">
+  <p class="section-title">Osmanlı Türkçesi Alfabesi (Elifba) — 34 Harf</p>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="filterAlphabet('all', this)">Tümü</button>
+    <button class="filter-btn" onclick="filterAlphabet('learned', this)">Öğrendiklerim</button>
+    <button class="filter-btn" onclick="filterAlphabet('unlearned', this)">Öğrenmediklerim</button>
+  </div>
+  <div class="alphabet-grid" id="alphabet-grid"></div>
+</div>
+
+<!-- FLASH KART -->
+<div id="flashcard-screen" class="screen">
+  <div class="mode-select">
+    <button class="mode-btn active" onclick="setCardMode('ar2name', this)">Harf → İsim</button>
+    <button class="mode-btn" onclick="setCardMode('name2ar', this)">İsim → Harf</button>
+  </div>
+  <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:8px;">
+    <p class="progress-label" id="card-progress-label" style="margin:0">0 / 34</p>
+    <button id="shuffle-btn" onclick="toggleShuffle(this)" style="
+      padding:4px 14px; border-radius:14px; border:1px solid #333;
+      background:#0d1a30; color:#556; font-size:0.78rem; cursor:pointer; transition:all 0.2s;">
+      🔀 Karıştır
+    </button>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="card-progress-bar" style="width:0%"></div></div>
+  <div class="flashcard-container" onclick="flipCard()">
+    <div class="flashcard-inner" id="flashcard-inner">
+      <div class="flashcard-front">
+        <div class="card-arabic" id="card-front-main"></div>
+        <div class="card-hint" id="card-front-hint">Kartı çevirmek için tıkla</div>
+      </div>
+      <div class="flashcard-back">
+        <div class="card-name"  id="card-back-name"></div>
+        <div class="card-latin" id="card-back-latin"></div>
+        <div class="card-examples" id="card-back-examples"></div>
+      </div>
+    </div>
+  </div>
+  <div class="flashcard-controls">
+    <button class="btn btn-secondary" onclick="prevCard()">← Önceki</button>
+    <button class="btn btn-primary"   onclick="nextCard()">Sonraki →</button>
+  </div>
+</div>
+
+<!-- QUİZ -->
+<div id="quiz-screen" class="screen">
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num" id="q-correct">0</div><div class="stat-lbl">Doğru</div></div>
+    <div class="stat"><div class="stat-num" id="q-wrong">0</div><div class="stat-lbl">Yanlış</div></div>
+    <div class="stat"><div class="stat-num" id="q-streak">0</div><div class="stat-lbl">Seri</div></div>
+  </div>
+  <div class="quiz-score" id="quiz-score-badge">Skor: 0</div>
+  <div class="quiz-question" id="quiz-question"></div>
+  <div class="quiz-sub"      id="quiz-sub"></div>
+  <div class="quiz-result"   id="quiz-result"></div>
+  <div class="quiz-options"  id="quiz-options"></div>
+  <button class="btn btn-primary" id="quiz-next-btn" onclick="nextQuiz()" style="display:none">Sonraki Soru →</button>
+  <br><br>
+  <button class="btn btn-secondary" onclick="resetQuiz()">Quizi Sıfırla</button>
+</div>
+
+<script>
+// ex: [ [başta-kelime, başta-anlam], [ortada-kelime, ortada-anlam], [sonda-kelime, sonda-anlam] ]
+const LETTERS = [
+  { name: "Elif",     ar: "ا", latin: "a / e",
+    ex: [["اسم","isim"], ["باب","bab (kapı)"], ["دعا","dua"]] },
+  { name: "Be",       ar: "ب", latin: "b",
+    ex: [["بابا","baba"], ["كتاب","kitab"], ["طلب","talep"]] },
+  { name: "Pe",       ar: "پ", latin: "p",
+    ex: [["پادشاه","padişah"], ["سپاه","sipah (asker)"], ["اروپا","Avrupa"]] },
+  { name: "Te",       ar: "ت", latin: "t",
+    ex: [["تاش","taş"], ["ستر","setr (örtü)"], ["بیت","beyt (ev)"]] },
+  { name: "Se",       ar: "ث", latin: "s",
+    ex: [["ثمر","semer (meyve)"], ["مثل","misal (gibi)"], ["حدیث","hadis"]] },
+  { name: "Cim",      ar: "ج", latin: "c",
+    ex: [["جان","can"], ["عجب","acep"], ["حاج","hac"]] },
+  { name: "Çim",      ar: "چ", latin: "ç",
+    ex: [["چشم","çeşm (göz)"], ["آچمق","açmak"], ["قیلیچ","kılıç"]] },
+  { name: "Ha",       ar: "ح", latin: "h",
+    ex: [["حال","hal"], ["بحر","bahr (deniz)"], ["صباح","sabah"]] },
+  { name: "Hı",       ar: "خ", latin: "h / kh",
+    ex: [["خبر","haber"], ["بخت","baht (talih)"], ["شاخ","şah (dal)"]] },
+  { name: "Dal",      ar: "د", latin: "d",
+    ex: [["دل","dil (gönül)"], ["بدن","beden"], ["احد","ahad (bir)"]] },
+  { name: "Zel",      ar: "ذ", latin: "z",
+    ex: [["ذات","zat"], ["اذن","izin"], ["اخذ","ahz (alma)"]] },
+  { name: "Re",       ar: "ر", latin: "r",
+    ex: [["راه","rah (yol)"], ["درس","ders"], ["دیار","diyar"]] },
+  { name: "Ze",       ar: "ز", latin: "z",
+    ex: [["زمان","zaman"], ["بازار","pazar"], ["نماز","namaz"]] },
+  { name: "Je",       ar: "ژ", latin: "j",
+    ex: [["ژاله","jale (çiy)"], ["ژنده","jende (yırtık)"], ["—","nadir"]] },
+  { name: "Sin",      ar: "س", latin: "s",
+    ex: [["سلام","selam"], ["مسجد","mescid"], ["درس","ders"]] },
+  { name: "Şın",      ar: "ش", latin: "ş",
+    ex: [["شمس","şems (güneş)"], ["عشق","aşk"], ["آتش","ateş"]] },
+  { name: "Sat",      ar: "ص", latin: "s",
+    ex: [["صبر","sabır"], ["مصر","Mısır"], ["خلاص","halas"]] },
+  { name: "Dat",      ar: "ض", latin: "d / z",
+    ex: [["ضرر","zarar"], ["فضل","fazl (erdem)"], ["ارض","arz (toprak)"]] },
+  { name: "Tı",       ar: "ط", latin: "t",
+    ex: [["طریق","tarîk (yol)"], ["بطن","batn (karın)"], ["خط","hat (yazı)"]] },
+  { name: "Zı",       ar: "ظ", latin: "z",
+    ex: [["ظلم","zulüm"], ["عظیم","azîm (büyük)"], ["لفظ","lafz (söz)"]] },
+  { name: "Ayn",      ar: "ع", latin: "' (ayn)",
+    ex: [["عشق","aşk"], ["معلم","muallim"], ["جمع","cem (toplama)"]] },
+  { name: "Gayn",     ar: "غ", latin: "g / ğ",
+    ex: [["غریب","garip"], ["مغرب","mağrip (batı)"], ["باغ","bağ"]] },
+  { name: "Fe",       ar: "ف", latin: "f",
+    ex: [["فکر","fikir"], ["صفر","sıfır"], ["کشف","keşf"]] },
+  { name: "Kaf",      ar: "ق", latin: "k / q",
+    ex: [["قلم","kalem"], ["عقل","akıl"], ["حق","hak"]] },
+  { name: "Kef",      ar: "ك", latin: "k / g / ğ / n",
+    ex: [["كتاب","kitap"], ["مكتب","mektep"], ["ملك","melik (kral)"]] },
+  { name: "Gef",      ar: "گ", latin: "g",
+    ex: [["گل","gül"], ["آگاه","agâh (haberdar)"], ["سنگ","seng (taş)"]] },
+  { name: "Nef",      ar: "ڭ", latin: "ñ / ng",
+    ex: [["ڭوز","göz (eski)"], ["سڭ","sen (eski)"], ["داڭ","dağ (eski)"]] },
+  { name: "Lam",      ar: "ل", latin: "l",
+    ex: [["لطف","lütuf"], ["علم","ilim"], ["اصل","asıl"]] },
+  { name: "Mim",      ar: "م", latin: "m",
+    ex: [["مكتب","mektep"], ["حمد","hamd (şükür)"], ["قلم","kalem"]] },
+  { name: "Nun",      ar: "ن", latin: "n",
+    ex: [["نور","nur (ışık)"], ["انسان","insan"], ["زمان","zaman"]] },
+  { name: "Vav",      ar: "و", latin: "v / u / ü / o / ö",
+    ex: [["وطن","vatan"], ["دولت","devlet"], ["علو","ulv (yüce)"]] },
+  { name: "He",       ar: "ه", latin: "h / e / a",
+    ex: [["هوا","hava"], ["بهار","bahar"], ["ماه","mâh (ay)"]] },
+  { name: "Lam-Elif", ar: "لا", latin: "lâ",
+    ex: [["لایق","layık"], ["علاج","ilaç"], ["مثلا","mesela"]] },
+  { name: "Ye",       ar: "ی", latin: "y / i / ı",
+    ex: [["یار","yar (dost)"], ["بیت","beyt"], ["علی","Ali"]] },
+];
+
+const POS_LABELS = ["Başta", "Ortada", "Sonda"];
+
+let learned = JSON.parse(localStorage.getItem('elifba_learned') || '[]');
+let cardIndex = 0;
+let cardMode = 'ar2name';
+let cardFlipped = false;
+let isShuffled = false;
+let shuffleOrder = [];
+
+let quizCorrect = 0, quizWrong = 0, quizStreak = 0, quizScore = 0;
+let quizAnswered = false;
+let quizQueue = [];
+
+function saveLearned() {
+  localStorage.setItem('elifba_learned', JSON.stringify(learned));
+}
+
+// ── SCREENS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id + '-screen').classList.add('active');
+  document.querySelectorAll('nav button').forEach((b,i) => {
+    b.classList.toggle('active', ['alphabet','flashcard','quiz'][i] === id);
+  });
+  if (id === 'alphabet')  renderAlphabet('all');
+  if (id === 'flashcard') renderCard();
+  if (id === 'quiz')      renderQuizQuestion();
+}
+
+// ── ALFABE ──
+function examplesHTML(ex) {
+  return `<div class="examples-row">` +
+    ex.map(([word, meaning], i) => `
+      <div class="ex-cell" onclick="event.stopPropagation(); openPopup('${POS_LABELS[i]}','${word}','${meaning}')">
+        <span class="ex-label">${POS_LABELS[i]}</span>
+        <span class="ex-word">${word}</span>
+        <span class="ex-meaning">${meaning}</span>
+      </div>`).join('') +
+    `</div>`;
+}
+
+function openPopup(label, word, meaning) {
+  document.getElementById('ex-popup-label').textContent   = label;
+  document.getElementById('ex-popup-word').textContent    = word;
+  document.getElementById('ex-popup-meaning').textContent = meaning;
+  document.getElementById('ex-popup').classList.add('open');
+}
+
+function closePopup(e) {
+  if (e && e.target === document.getElementById('ex-popup-inner')) return;
+  if (e && e.currentTarget === document.getElementById('ex-popup-inner')) return;
+  document.getElementById('ex-popup').classList.remove('open');
+}
+
+function renderAlphabet(filter) {
+  const grid = document.getElementById('alphabet-grid');
+  grid.innerHTML = '';
+  const w = window.innerWidth;
+  if (w <= 430)      grid.style.gridTemplateColumns = '1fr';
+  else if (w <= 600) grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  else if (w <= 900) grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+  else               grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+  LETTERS.forEach((l, i) => {
+    if (filter === 'learned'   && !learned.includes(i)) return;
+    if (filter === 'unlearned' &&  learned.includes(i)) return;
+    const div = document.createElement('div');
+    div.className = 'letter-card' + (learned.includes(i) ? ' learned' : '');
+    div.innerHTML = `
+      <div class="learned-badge">✓</div>
+      <div class="arabic">${l.ar}</div>
+      <div class="name">${l.name}</div>
+      <div class="latin">${l.latin}</div>
+      ${examplesHTML(l.ex)}
+    `;
+    div.onclick = () => toggleLearned(i, div);
+    grid.appendChild(div);
+  });
+}
+
+function filterAlphabet(f, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAlphabet(f);
+}
+
+function toggleLearned(i, el) {
+  if (learned.includes(i)) {
+    learned = learned.filter(x => x !== i);
+    el.classList.remove('learned');
+  } else {
+    learned.push(i);
+    el.classList.add('learned');
+  }
+  saveLearned();
+}
+
+// ── FLASH KART ──
+function currentLetter() {
+  return LETTERS[isShuffled ? shuffleOrder[cardIndex] : cardIndex];
+}
+
+function toggleShuffle(btn) {
+  isShuffled = !isShuffled;
+  if (isShuffled) {
+    shuffleOrder = [...Array(LETTERS.length).keys()].sort(() => Math.random() - 0.5);
+    btn.style.color = '#f5c518';
+    btn.style.borderColor = '#f5c518';
+    btn.style.background = '#0f3460';
+  } else {
+    btn.style.color = '#556';
+    btn.style.borderColor = '#333';
+    btn.style.background = '#0d1a30';
+  }
+  cardIndex = 0;
+  renderCard();
+}
+
+function setCardMode(mode, btn) {
+  cardMode = mode;
+  cardIndex = 0;
+  cardFlipped = false;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    if (b.id !== 'shuffle-btn') b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  renderCard();
+}
+
+function renderCard() {
+  const l = currentLetter();
+  const inner = document.getElementById('flashcard-inner');
+  // Animasyonsuz anlık sıfırla, sonra geçişi geri aç
+  inner.style.transition = 'none';
+  inner.classList.remove('flipped');
+  cardFlipped = false;
+  inner.offsetHeight; // reflow zorla
+  inner.style.transition = '';
+
+  const pct = Math.round((learned.length / LETTERS.length) * 100);
+  document.getElementById('card-progress-bar').style.width = ((cardIndex + 1) / LETTERS.length * 100) + '%';
+  document.getElementById('card-progress-label').textContent = `${cardIndex + 1} / ${LETTERS.length}`;
+
+  const frontEl = document.getElementById('card-front-main');
+  if (cardMode === 'ar2name' || cardMode === 'ar2latin') {
+    frontEl.textContent = l.ar;
+    frontEl.style.fontSize = '5rem';
+    frontEl.style.direction = 'rtl';
+    document.getElementById('card-front-hint').textContent =
+      cardMode === 'ar2name' ? 'Bu harfin adı nedir? (tıkla)' : 'Bu harfin sesi nedir? (tıkla)';
+  } else {
+    frontEl.textContent = l.name;
+    frontEl.style.fontSize = '2.5rem';
+    frontEl.style.direction = 'ltr';
+    document.getElementById('card-front-hint').textContent = 'Arapça yazılışı nedir? (tıkla)';
+  }
+
+  if (cardMode === 'name2ar') {
+    document.getElementById('card-back-name').textContent  = l.ar;
+    document.getElementById('card-back-name').style.fontFamily = "'Amiri', serif";
+    document.getElementById('card-back-name').style.fontSize   = '4rem';
+    document.getElementById('card-back-name').style.direction  = 'rtl';
+  } else {
+    document.getElementById('card-back-name').textContent  = l.name;
+    document.getElementById('card-back-name').style.fontFamily = '';
+    document.getElementById('card-back-name').style.fontSize   = '';
+    document.getElementById('card-back-name').style.direction  = '';
+  }
+  document.getElementById('card-back-latin').textContent = l.latin;
+  document.getElementById('card-back-examples').innerHTML = l.ex.map(([word, meaning], i) => `
+    <div class="card-ex" onclick="event.stopPropagation(); openPopup('${POS_LABELS[i]}','${word}','${meaning}')" style="cursor:pointer">
+      <span class="card-ex-label">${POS_LABELS[i]}</span>
+      <span class="card-ex-word">${word}</span>
+      <span class="card-ex-tr">${meaning}</span>
+    </div>`).join('');
+}
+
+function flipCard() {
+  const inner = document.getElementById('flashcard-inner');
+  cardFlipped = !cardFlipped;
+  inner.classList.toggle('flipped', cardFlipped);
+}
+
+function nextCard() {
+  cardIndex = (cardIndex + 1) % LETTERS.length;
+  renderCard();
+}
+
+function prevCard() {
+  cardIndex = (cardIndex - 1 + LETTERS.length) % LETTERS.length;
+  renderCard();
+}
+
+function markLearned() {
+  const realIndex = isShuffled ? shuffleOrder[cardIndex] : cardIndex;
+  if (!learned.includes(realIndex)) {
+    learned.push(realIndex);
+    saveLearned();
+  }
+  nextCard();
+}
+
+// ── QUİZ ──
+function buildQuizQueue() {
+  quizQueue = [...Array(LETTERS.length).keys()];
+  const unlearned = quizQueue.filter(i => !learned.includes(i));
+  quizQueue = [...quizQueue, ...unlearned];
+  quizQueue.sort(() => Math.random() - 0.5);
+}
+
+function renderQuizQuestion() {
+  if (!quizQueue.length) buildQuizQueue();
+  quizAnswered = false;
+  const idx = quizQueue.pop();
+  const l = LETTERS[idx];
+
+  const qtype = Math.floor(Math.random() * 2);
+  const qEl   = document.getElementById('quiz-question');
+  const subEl = document.getElementById('quiz-sub');
+  document.getElementById('quiz-result').textContent = '';
+  document.getElementById('quiz-next-btn').style.display = 'none';
+
+  let questionText, correctAns, allChoices, isArabic;
+  if (qtype === 0) {
+    questionText = l.ar; isArabic = true;
+    subEl.textContent = 'Bu harfin adı nedir?';
+    correctAns = l.name;
+    allChoices = LETTERS.map(x => x.name);
+  } else if (qtype === 1) {
+    questionText = l.name; isArabic = false;
+    subEl.textContent = 'Bu harfin Arapça yazılışı hangisidir?';
+    correctAns = l.ar;
+    allChoices = LETTERS.map(x => x.ar);
+  } else {
+    questionText = l.ar; isArabic = true;
+    subEl.textContent = 'Bu harfin Latin karşılığı nedir?';
+    correctAns = l.latin;
+    allChoices = LETTERS.map(x => x.latin);
+  }
+
+  qEl.style.direction = isArabic ? 'rtl' : 'ltr';
+  qEl.style.fontSize  = isArabic ? '5rem' : '2rem';
+  qEl.textContent = questionText;
+
+  const wrong = [...new Set(allChoices.filter(c => c !== correctAns))]
+    .sort(() => Math.random() - 0.5).slice(0, 3);
+  const opts = [...wrong, correctAns].sort(() => Math.random() - 0.5);
+
+  const optsEl = document.getElementById('quiz-options');
+  optsEl.innerHTML = '';
+  opts.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-opt';
+    btn.textContent = opt;
+    btn.style.direction = qtype === 1 ? 'rtl' : 'ltr';
+    btn.onclick = () => answerQuiz(opt, correctAns);
+    optsEl.appendChild(btn);
+  });
+}
+
+function answerQuiz(chosen, correct) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  document.querySelectorAll('.quiz-opt').forEach(btn => {
+    btn.disabled = true;
+    if (btn.textContent === correct) btn.classList.add('correct');
+    else if (btn.textContent === chosen) btn.classList.add('wrong');
+  });
+
+  const resEl = document.getElementById('quiz-result');
+  if (chosen === correct) {
+    quizCorrect++;
+    quizStreak++;
+    quizScore += 10 + Math.min(quizStreak * 2, 20);
+    resEl.textContent = '✓ Doğru! ' + (quizStreak > 1 ? `${quizStreak} seri!` : '');
+    resEl.className = 'quiz-result ok';
+  } else {
+    quizWrong++;
+    quizStreak = 0;
+    quizScore = Math.max(0, quizScore - 3);
+    resEl.textContent = '✗ Yanlış. Doğrusu: ' + correct;
+    resEl.className = 'quiz-result fail';
+  }
+
+  document.getElementById('q-correct').textContent = quizCorrect;
+  document.getElementById('q-wrong').textContent   = quizWrong;
+  document.getElementById('q-streak').textContent  = quizStreak;
+  document.getElementById('quiz-score-badge').textContent = 'Skor: ' + quizScore;
+  document.getElementById('quiz-next-btn').style.display = 'inline-block';
+}
+
+function nextQuiz() { renderQuizQuestion(); }
+
+function resetQuiz() {
+  quizCorrect = quizWrong = quizStreak = quizScore = 0;
+  document.getElementById('q-correct').textContent = '0';
+  document.getElementById('q-wrong').textContent   = '0';
+  document.getElementById('q-streak').textContent  = '0';
+  document.getElementById('quiz-score-badge').textContent = 'Skor: 0';
+  buildQuizQueue();
+  renderQuizQuestion();
+}
+
+function applyGridLayout() {
+  const grid = document.getElementById('alphabet-grid');
+  if (!grid) return;
+  const w = window.innerWidth;
+  if (w <= 430)      grid.style.gridTemplateColumns = '1fr';
+  else if (w <= 600) grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  else if (w <= 900) grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+  else               grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+}
+window.addEventListener('resize', applyGridLayout);
+
+renderAlphabet('all');
+buildQuizQueue();
+applyGridLayout();
+</script>
+</body>
+</html>
