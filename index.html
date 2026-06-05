@@ -321,6 +321,26 @@
   @media (max-width: 480px) {
     .quiz-options { grid-template-columns: 1fr; }
     .card-arabic  { font-size: 4rem; }
+
+    /* ── Mobil quiz kompakt layout ── */
+    header { padding: 10px 16px; }
+    header h1 { font-size: 1.4rem; }
+    header .credit { margin-top: 4px; }
+    nav { padding: 8px 12px; gap: 8px; }
+    nav button { padding: 7px 16px; font-size: 0.85rem; }
+
+    #quiz-screen { padding: 10px 14px; }
+    .quiz-mode-row { margin-bottom: 10px; }
+    .quiz-mode-btn { padding: 6px 14px; font-size: 0.8rem; }
+    .stats-bar { gap: 14px; margin-bottom: 10px; }
+    .stat-num  { font-size: 1.4rem; }
+    .stat-lbl  { font-size: 0.7rem; }
+    .quiz-question { height: 120px; font-size: 4rem; margin: 6px 0; }
+    .quiz-sub      { font-size: 0.8rem; height: 22px; margin-bottom: 8px; }
+    .quiz-result   { font-size: 1rem; height: 28px; margin: 6px 0; }
+    .quiz-all-grid { gap: 5px; margin-bottom: 12px; }
+    .quiz-all-opt  { padding: 7px 2px; font-size: 1.3rem; border-radius: 8px; }
+    #quiz-next-btn { padding: 10px 22px; font-size: 0.9rem; }
   }
 </style>
 </head>
@@ -787,14 +807,14 @@ function renderQuizQuestion() {
       });
     } else {
       // harf → isim: 34 isim butonu
-      allEl.style.gridTemplateColumns = 'repeat(3, 1fr)';
+      allEl.style.gridTemplateColumns = window.innerWidth <= 480 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)';
       LETTERS.forEach(letter => {
         const btn = document.createElement('button');
         btn.className = 'quiz-all-opt';
         btn.style.fontFamily = 'inherit';
-        btn.style.fontSize = '0.9rem';
+        btn.style.fontSize = window.innerWidth <= 480 ? '0.72rem' : '0.9rem';
         btn.style.direction = 'ltr';
-        btn.style.padding = '10px 6px';
+        btn.style.padding = window.innerWidth <= 480 ? '8px 2px' : '10px 6px';
         btn.textContent = letter.name;
         btn.onclick = () => answerQuiz(letter.name, correctAns);
         allEl.appendChild(btn);
