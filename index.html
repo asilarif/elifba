@@ -206,8 +206,10 @@
 
   /* ── QUİZ ── */
   #quiz-screen { text-align: center; }
-  .quiz-question { font-size: 5rem; color: #f5c518; direction: rtl; margin: 20px 0; min-height: 90px; font-family: 'Amiri', serif; }
-  .quiz-sub { font-size: 0.9rem; color: #888; margin-bottom: 20px; }
+  .quiz-question { font-size: 5rem; color: #f5c518; direction: rtl; font-family: 'Amiri', serif;
+    height: 160px; display: flex; align-items: center; justify-content: center;
+    margin: 16px 0; line-height: 1.2; }
+  .quiz-sub { font-size: 0.9rem; color: #888; height: 28px; margin-bottom: 16px; }
   .quiz-options {
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 12px; max-width: 460px; margin: 0 auto 24px;
@@ -326,8 +328,7 @@
 
 <header>
   <h1>📖 Osmanlıca Elifba</h1>
-  <p>Harfleri öğren, ezberle, sına</p>
-  <p class="credit">by Asil A. A.</p>
+  <p class="credit">Asil A. A.</p>
 </header>
 
 <nav>
