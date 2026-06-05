@@ -222,6 +222,34 @@
   .quiz-opt.wrong   { border-color: #e94560; background: rgba(233,69,96,0.15); color: #e74c3c; }
   .quiz-opt:disabled { cursor: default; }
 
+  /* quiz mod seçici */
+  .quiz-mode-row {
+    display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;
+  }
+  .quiz-mode-btn {
+    padding: 8px 20px; border-radius: 20px; border: 1px solid #0f3460;
+    background: #16213e; color: #888; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
+  }
+  .quiz-mode-btn.active { background: #e94560; color: #fff; border-color: #e94560; }
+
+  /* tam alfabe grid */
+  .quiz-all-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px; max-width: 500px; margin: 0 auto 24px;
+  }
+  .quiz-all-opt {
+    padding: 10px 4px; border-radius: 10px; border: 2px solid #0f3460;
+    background: #16213e; color: #f5c518; cursor: pointer;
+    font-size: 1.6rem; font-family: 'Amiri', serif; text-align: center;
+    transition: all 0.15s; direction: rtl;
+  }
+  .quiz-all-opt:hover:not(:disabled) { border-color: #e94560; background: #1e2a4a; }
+  .quiz-all-opt.correct { border-color: #27ae60; background: rgba(39,174,96,0.2); }
+  .quiz-all-opt.wrong   { border-color: #e94560; background: rgba(233,69,96,0.15); }
+  .quiz-all-opt:disabled { cursor: default; opacity: 0.5; }
+  .quiz-all-opt.correct, .quiz-all-opt.wrong { opacity: 1; }
+
   .quiz-score {
     display: inline-block; background: #16213e; border: 1px solid #0f3460;
     border-radius: 20px; padding: 6px 20px; font-size: 0.9rem; color: #f5c518; margin-bottom: 20px;
@@ -365,6 +393,10 @@
 
 <!-- QUİZ -->
 <div id="quiz-screen" class="screen">
+  <div class="quiz-mode-row">
+    <button class="quiz-mode-btn active" onclick="setQuizMode('4choice', this)">4 Şık</button>
+    <button class="quiz-mode-btn" onclick="setQuizMode('all', this)">Tüm Alfabe</button>
+  </div>
   <div class="stats-bar">
     <div class="stat"><div class="stat-num" id="q-correct">0</div><div class="stat-lbl">Doğru</div></div>
     <div class="stat"><div class="stat-num" id="q-wrong">0</div><div class="stat-lbl">Yanlış</div></div>
@@ -375,6 +407,7 @@
   <div class="quiz-sub"      id="quiz-sub"></div>
   <div class="quiz-result"   id="quiz-result"></div>
   <div class="quiz-options"  id="quiz-options"></div>
+  <div class="quiz-all-grid" id="quiz-all-grid" style="display:none"></div>
   <button class="btn btn-primary" id="quiz-next-btn" onclick="nextQuiz()" style="display:none">Sonraki Soru →</button>
   <br><br>
   <button class="btn btn-secondary" onclick="resetQuiz()">Quizi Sıfırla</button>
@@ -465,6 +498,7 @@ let shuffleOrder = [];
 let quizCorrect = 0, quizWrong = 0, quizStreak = 0, quizScore = 0;
 let quizAnswered = false;
 let quizQueue = [];
+let quizMode = '4choice'; // '4choice' | 'all'
 
 function saveLearned() {
   localStorage.setItem('elifba_learned', JSON.stringify(learned));
@@ -655,6 +689,13 @@ function markLearned() {
 }
 
 // ── QUİZ ──
+function setQuizMode(mode, btn) {
+  quizMode = mode;
+  document.querySelectorAll('.quiz-mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  resetQuiz();
+}
+
 function buildQuizQueue() {
   quizQueue = [...Array(LETTERS.length).keys()];
   const unlearned = quizQueue.filter(i => !learned.includes(i));
@@ -668,11 +709,21 @@ function renderQuizQuestion() {
   const idx = quizQueue.pop();
   const l = LETTERS[idx];
 
-  const qtype = Math.floor(Math.random() * 2);
   const qEl   = document.getElementById('quiz-question');
   const subEl = document.getElementById('quiz-sub');
+  const optsEl = document.getElementById('quiz-options');
+  const allEl  = document.getElementById('quiz-all-grid');
   document.getElementById('quiz-result').textContent = '';
   document.getElementById('quiz-next-btn').style.display = 'none';
+
+  // "Tüm Alfabe" modunda soru her zaman isim → harf
+  // "4 Şık" modunda 0=harf→isim, 1=isim→harf
+  let qtype;
+  if (quizMode === 'all') {
+    qtype = 1; // isim → harf (cevap Arapça harf olacak)
+  } else {
+    qtype = Math.floor(Math.random() * 2);
+  }
 
   let questionText, correctAns, allChoices, isArabic;
   if (qtype === 0) {
@@ -680,42 +731,53 @@ function renderQuizQuestion() {
     subEl.textContent = 'Bu harfin adı nedir?';
     correctAns = l.name;
     allChoices = LETTERS.map(x => x.name);
-  } else if (qtype === 1) {
+  } else {
     questionText = l.name; isArabic = false;
     subEl.textContent = 'Bu harfin Arapça yazılışı hangisidir?';
     correctAns = l.ar;
     allChoices = LETTERS.map(x => x.ar);
-  } else {
-    questionText = l.ar; isArabic = true;
-    subEl.textContent = 'Bu harfin Latin karşılığı nedir?';
-    correctAns = l.latin;
-    allChoices = LETTERS.map(x => x.latin);
   }
 
   qEl.style.direction = isArabic ? 'rtl' : 'ltr';
   qEl.style.fontSize  = isArabic ? '5rem' : '2rem';
   qEl.textContent = questionText;
 
-  const wrong = [...new Set(allChoices.filter(c => c !== correctAns))]
-    .sort(() => Math.random() - 0.5).slice(0, 3);
-  const opts = [...wrong, correctAns].sort(() => Math.random() - 0.5);
-
-  const optsEl = document.getElementById('quiz-options');
-  optsEl.innerHTML = '';
-  opts.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.className = 'quiz-opt';
-    btn.textContent = opt;
-    btn.style.direction = qtype === 1 ? 'rtl' : 'ltr';
-    btn.onclick = () => answerQuiz(opt, correctAns);
-    optsEl.appendChild(btn);
-  });
+  if (quizMode === '4choice') {
+    optsEl.style.display = '';
+    allEl.style.display  = 'none';
+    const wrong = [...new Set(allChoices.filter(c => c !== correctAns))]
+      .sort(() => Math.random() - 0.5).slice(0, 3);
+    const opts = [...wrong, correctAns].sort(() => Math.random() - 0.5);
+    optsEl.innerHTML = '';
+    opts.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-opt';
+      btn.textContent = opt;
+      btn.style.direction = qtype === 1 ? 'rtl' : 'ltr';
+      btn.onclick = () => answerQuiz(opt, correctAns);
+      optsEl.appendChild(btn);
+    });
+  } else {
+    // Tüm alfabe modu — 34 harfin tamamını göster
+    optsEl.style.display = 'none';
+    allEl.style.display  = '';
+    allEl.innerHTML = '';
+    LETTERS.forEach(letter => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-all-opt';
+      btn.textContent = letter.ar;
+      btn.title = letter.name;
+      btn.onclick = () => answerQuiz(letter.ar, correctAns);
+      allEl.appendChild(btn);
+    });
+  }
 }
 
 function answerQuiz(chosen, correct) {
   if (quizAnswered) return;
   quizAnswered = true;
-  document.querySelectorAll('.quiz-opt').forEach(btn => {
+  const selector = quizMode === 'all' ? '.quiz-all-opt' : '.quiz-opt';
+  document.querySelectorAll(selector).forEach(btn => {
     btn.disabled = true;
     if (btn.textContent === correct) btn.classList.add('correct');
     else if (btn.textContent === chosen) btn.classList.add('wrong');
