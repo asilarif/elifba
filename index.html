@@ -406,7 +406,6 @@
     <div class="stat"><div class="stat-num" id="q-wrong">0</div><div class="stat-lbl">Yanlış</div></div>
     <div class="stat"><div class="stat-num" id="q-streak">0</div><div class="stat-lbl">Seri</div></div>
   </div>
-  <div class="quiz-score" id="quiz-score-badge">Skor: 0</div>
   <div class="quiz-question" id="quiz-question"></div>
   <div class="quiz-sub"      id="quiz-sub"></div>
   <div class="quiz-result"   id="quiz-result"></div>
@@ -499,7 +498,7 @@ let cardFlipped = false;
 let isShuffled = false;
 let shuffleOrder = [];
 
-let quizCorrect = 0, quizWrong = 0, quizStreak = 0, quizScore = 0;
+let quizCorrect = 0, quizWrong = 0, quizStreak = 0;
 let quizAnswered = false;
 let quizQueue = [];
 let quizMode = '4choice';    // '4choice' | 'all'
@@ -817,13 +816,11 @@ function answerQuiz(chosen, correct) {
   if (chosen === correct) {
     quizCorrect++;
     quizStreak++;
-    quizScore += 10 + Math.min(quizStreak * 2, 20);
     resEl.textContent = '✓ Doğru! ' + (quizStreak > 1 ? `${quizStreak} seri!` : '');
     resEl.className = 'quiz-result ok';
   } else {
     quizWrong++;
     quizStreak = 0;
-    quizScore = Math.max(0, quizScore - 3);
     resEl.textContent = '✗ Yanlış. Doğrusu: ' + correct;
     resEl.className = 'quiz-result fail';
   }
@@ -831,18 +828,16 @@ function answerQuiz(chosen, correct) {
   document.getElementById('q-correct').textContent = quizCorrect;
   document.getElementById('q-wrong').textContent   = quizWrong;
   document.getElementById('q-streak').textContent  = quizStreak;
-  document.getElementById('quiz-score-badge').textContent = 'Skor: ' + quizScore;
   document.getElementById('quiz-next-btn').style.display = 'inline-block';
 }
 
 function nextQuiz() { renderQuizQuestion(); }
 
 function resetQuiz() {
-  quizCorrect = quizWrong = quizStreak = quizScore = 0;
+  quizCorrect = quizWrong = quizStreak = 0;
   document.getElementById('q-correct').textContent = '0';
   document.getElementById('q-wrong').textContent   = '0';
   document.getElementById('q-streak').textContent  = '0';
-  document.getElementById('quiz-score-badge').textContent = 'Skor: 0';
   buildQuizQueue();
   renderQuizQuestion();
 }
